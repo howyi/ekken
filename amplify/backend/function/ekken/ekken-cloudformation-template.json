@@ -1,0 +1,329 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Lambda resource stack creation using Amplify CLI",
+	"Parameters": {
+		"env": {
+			"Type": "String"
+		},
+		"apiekkenGraphQLAPIIdOutput": {
+			"Type": "String",
+			"Default": "apiekkenGraphQLAPIIdOutput"
+		}
+	},
+	"Conditions": {
+		"ShouldNotCreateEnvResources": {
+			"Fn::Equals": [
+				{
+					"Ref": "env"
+				},
+				"NONE"
+			]
+		}
+	},
+	"Resources": {
+		"LambdaFunction": {
+			"Type": "AWS::Lambda::Function",
+			"Metadata": {
+				"aws:asset:path": "./src",
+				"aws:asset:property": "Code"
+			},
+			"Properties": {
+				"Handler": "index.handler",
+				"FunctionName": {
+					"Fn::If": [
+						"ShouldNotCreateEnvResources",
+						"ekken",
+						{
+							"Fn::Join": [
+								"",
+								[
+									"ekken",
+									"-",
+									{
+										"Ref": "env"
+									}
+								]
+							]
+						}
+					]
+				},
+				"Environment": {
+					"Variables": {
+						"ENV": {
+							"Ref": "env"
+						},
+						"REGION": {
+							"Ref": "AWS::Region"
+						},
+						"API_EKKEN_GRAPHQLAPIIDOUTPUT": {
+							"Ref": "apiekkenGraphQLAPIIdOutput"
+						},
+						"CONNECT_REGION": "####",
+						"CONNECT_CREDENTIAL_ACCESS_KEY_ID": "####",
+						"CONNECT_CREDENTIAL_SECRET_ACCESS_KEY": "####",
+						"CONNECT_INSTANCE_ID": "####",
+						"CONNECT_CONTACT_FLOW_ID": "####",
+						"CONNECT_SOURCE_PHONE_NUMBER": "####",
+						"SES_REGION": "####",
+						"SES_SOURCE_EMAIL_ADDRESS": "####"
+					}
+				},
+				"Role": {
+					"Fn::GetAtt": [
+						"LambdaExecutionRole",
+						"Arn"
+					]
+				},
+				"Runtime": "nodejs10.x",
+				"Timeout": "25",
+				"Code": {
+					"S3Bucket": "ekken-hwa-20190825221128-deployment",
+					"S3Key": "amplify-builds/ekken-675334306d5438595a73-build.zip"
+				}
+			}
+		},
+		"LambdaExecutionRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"RoleName": {
+					"Fn::If": [
+						"ShouldNotCreateEnvResources",
+						"ekkenLambdaRole2a50838d",
+						{
+							"Fn::Join": [
+								"",
+								[
+									"ekkenLambdaRole2a50838d",
+									"-",
+									{
+										"Ref": "env"
+									}
+								]
+							]
+						}
+					]
+				},
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": [
+									"lambda.amazonaws.com"
+								]
+							},
+							"Action": [
+								"sts:AssumeRole"
+							]
+						}
+					]
+				}
+			}
+		},
+		"lambdaexecutionpolicy": {
+			"DependsOn": [
+				"LambdaExecutionRole"
+			],
+			"Type": "AWS::IAM::Policy",
+			"Properties": {
+				"PolicyName": "lambda-execution-policy",
+				"Roles": [
+					{
+						"Ref": "LambdaExecutionRole"
+					}
+				],
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Action": [
+								"logs:CreateLogGroup",
+								"logs:CreateLogStream",
+								"logs:PutLogEvents"
+							],
+							"Resource": {
+								"Fn::Sub": [
+									"arn:aws:logs:${region}:${account}:log-group:/aws/lambda/${lambda}:log-stream:*",
+									{
+										"region": {
+											"Ref": "AWS::Region"
+										},
+										"account": {
+											"Ref": "AWS::AccountId"
+										},
+										"lambda": {
+											"Ref": "LambdaFunction"
+										}
+									}
+								]
+							}
+						},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"dynamodb:PutItem",
+								"dynamodb:GetItem",
+								"dynamodb:UpdateItem",
+								"dynamodb:Scan"
+							],
+							"Resource": [
+								{
+									"Fn::Sub": [
+										"arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+										{
+											"tablename": {
+												"Fn::If": [
+													"ShouldNotCreateEnvResources",
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Stream",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																}
+															]
+														]
+													},
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Stream",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																},
+																{
+																	"Ref": "env"
+																}
+															]
+														]
+													}
+												]
+											}
+										}
+									]
+								},
+								{
+									"Fn::Sub": [
+										"arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+										{
+											"tablename": {
+												"Fn::If": [
+													"ShouldNotCreateEnvResources",
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Event",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																}
+															]
+														]
+													},
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Event",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																},
+																{
+																	"Ref": "env"
+																}
+															]
+														]
+													}
+												]
+											}
+										}
+									]
+								},
+								{
+									"Fn::Sub": [
+										"arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+										{
+											"tablename": {
+												"Fn::If": [
+													"ShouldNotCreateEnvResources",
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Subscribe",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																}
+															]
+														]
+													},
+													{
+														"Fn::Join": [
+															"-",
+															[
+																"Subscribe",
+																{
+																	"Ref": "apiekkenGraphQLAPIIdOutput"
+																},
+																{
+																	"Ref": "env"
+																}
+															]
+														]
+													}
+												]
+											}
+										}
+									]
+								}
+							]
+						},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"connect:StartOutboundVoiceContact"
+							],
+							"Resource": "*"
+						},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"ses:SendEmail"
+							],
+							"Resource": "*"
+						}
+					]
+				}
+			}
+		}
+	},
+	"Outputs": {
+		"Name": {
+			"Value": {
+				"Ref": "LambdaFunction"
+			}
+		},
+		"Arn": {
+			"Value": {
+				"Fn::GetAtt": [
+					"LambdaFunction",
+					"Arn"
+				]
+			}
+		},
+		"Region": {
+			"Value": {
+				"Ref": "AWS::Region"
+			}
+		},
+		"LambdaExecutionRole": {
+			"Value": {
+				"Ref": "LambdaExecutionRole"
+			}
+		}
+	}
+}

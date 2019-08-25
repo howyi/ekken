@@ -1,0 +1,34 @@
+{
+    "paths": [
+        {
+            "name": "/alert",
+            "lambdaFunction": "ekken",
+            "privacy": {
+                "open": true
+            }
+        }
+    ],
+    "resourceName": "ekkenRest",
+    "apiName": "ekkenRest",
+    "functionArns": [
+        {
+            "lambdaFunction": "ekken"
+        }
+    ],
+    "privacy": {
+        "auth": 0,
+        "unauth": 0,
+        "authRoleName": "ekken-hwa-20190825221128-authRole",
+        "unAuthRoleName": "ekken-hwa-20190825221128-unauthRole"
+    },
+    "dependsOn": [
+        {
+            "category": "function",
+            "resourceName": "ekken",
+            "attributes": [
+                "Name",
+                "Arn"
+            ]
+        }
+    ]
+}

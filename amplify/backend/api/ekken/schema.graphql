@@ -1,0 +1,31 @@
+type Stream @model {
+  id: ID!
+  name: String!
+  createdUser: ID!
+  subscribes: [Subscribe!]! @connection(name: "StreamSubscribes", keyField: "streamId")
+  events: [Event!]! @connection(name: "StreamEvents", keyField: "streamId")
+}
+
+type Event @model {
+  id: ID!
+  stream: Stream! @connection(name: "StreamEvents", keyField: "streamId")
+  title: String!
+  description: String!
+  detail: AWSJSON
+}
+
+type Subscribe @model @key(fields: ["id", "streamId"]) {
+  id: ID!
+  stream: Stream! @connection(name: "StreamSubscribes", keyField: "streamId")
+  streamId: ID!
+  phone: String
+  email: String
+}
+
+input CreateSubscribeInput {
+  streamId: ID!
+}
+
+input CreateStreamInput {
+  name: String!
+}
